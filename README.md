@@ -7,3 +7,5 @@ You will find :
 - TileBreaker : Unity Shader that does exactly what its name implies
 
 Code isn't great but it works teehee
+
+MIT license do whatever you want with it :)
