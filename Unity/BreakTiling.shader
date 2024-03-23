@@ -1,4 +1,4 @@
-Shader "Custom/TileBreaker" {
+Shader "Custom/TilingBreak" {
     Properties {
         _MainTex ("Albedo (RGB)", 2D) = "white" {}
         _Color ("Color", Color) = (1,1,1,1)
@@ -9,8 +9,10 @@ Shader "Custom/TileBreaker" {
         _BlendRange ("Blend Range", Range(0, 1)) = 0.1
         _MinScale ("Minimum Scale", Range(0, 5.0)) = 0.5
         _MaxScale ("Maximum Scale", Range(0, 5.0)) = 2.0
-        _OverlayScale ("Overlay Scale", Range(0.1,5)) = 1.0
+        _OverlayScale ("Overlay Scale", Range(1,15)) = 1.0
         _OverlayOpacity ("Overlay Opacity", Range(0,1)) = 0.5
+        _BlendRange2 ("Overlay Blend Range", Range(0, 1)) = 0.1
+        [Toggle(DEBUG_MODE)] _DebugMode ("Debug Mode", Float) = 0
 
     }
     SubShader {
@@ -18,6 +20,7 @@ Shader "Custom/TileBreaker" {
         LOD 100
         CGPROGRAM
         #pragma surface surf Standard fullforwardshadows
+        #pragma multi_compile __ DEBUG_MODE
         #pragma target 3.0
         #pragma shader_feature_local _NORMALMAP
         sampler2D _MainTex;
@@ -30,6 +33,8 @@ Shader "Custom/TileBreaker" {
         float _MaxScale;
         float _NormalMapInfluence;
         float _OverlayScale;
+        float _DebugMode;
+        float _BlendRange2;
 float _OverlayOpacity;
         struct Input {
             float2 uv_MainTex;
@@ -144,18 +149,44 @@ float _OverlayOpacity;
             fixed4 edgeColor = tex2D(_MainTex, edgeUV) * _Color; // Corrected to sample edge color with the edge UVs after rotation
 
             // Blend edge color with tile color based on the blend range
-            float2 overlayTile = floor(uv / 5);
-            float2 overlayRandomTile = frac(uv /5);
-            fixed4 finalColor = lerp(texColor, edgeColor, edgeBlend);
+            float2 overlayTile = floor(uv / _OverlayScale);
+            float2 overlayRandomTile = frac(uv / _OverlayScale);
+            fixed4 baseBlend = lerp(texColor, edgeColor, edgeBlend);
             float overlayRotation = snoise(float2(dot(overlayTile, float2(12.3412, 54.123)) + _Seed, 5.0)) * 360.0; // Unique rotation for overlay
             float2 overlayUV = rotate(overlayRandomTile, overlayRotation); // Apply rotation for overlay
-            overlayUV = (overlayUV - center) * _OverlayScale + center; // Apply scale for overlay
 
             fixed4 overlayColor = tex2D(_MainTex, overlayUV) * _Color; // Sample overlay texture
-            fixed4 blendedOverlay = lerp(finalColor,overlayColor, _OverlayOpacity); // Blend with base texture
 
-            o.Albedo = blendedOverlay.rgb;
-            o.Alpha = blendedOverlay.a;
+            // Improved edge blending calculation
+            float edgeDistanceXOvr = min(overlayUV.x, 1.0 - overlayUV.x);
+            float edgeDistanceYOvr = min(overlayUV.y, 1.0 - overlayUV.y);
+            float edgeDistanceOvr = min(edgeDistanceXOvr, edgeDistanceYOvr);
+
+            float edgeBlendOverlay = smoothstep(0.0, _BlendRange2, edgeDistanceOvr);
+
+            fixed4 overlayEdgeColor = tex2D(_MainTex, overlayRandomTile);
+            fixed4 overlayBlended = lerp(overlayEdgeColor,overlayColor, edgeBlendOverlay);
+            fixed4 baseAndOverlay = lerp(baseBlend,overlayBlended, _OverlayOpacity); // Blend with base texture
+            
+            // Add this inside your surf function, after calculating baseBlend but before applying it to o.Albedo
+            fixed4 debugColor = fixed4(0,0,0,1); // Black color to initialize
+
+            // Detect if we are close to the edge of a tile
+            float isNearEdge = step(0.05, edgeDistance); // 0.05 is a threshold, can be adjusted
+
+            // Assign a bright color for visualization where artifacts are detected
+            if (isNearEdge < 1.0) {
+                debugColor = fixed4(1,0,0,1); // Red color for visual debugging
+            }
+
+            // Now blend this with your baseAndOverlay based on the debug flag
+            #ifdef DEBUG_MODE
+            o.Albedo = lerp(baseBlend.rgb, debugColor.rgb, debugColor.a);
+            #else
+            o.Albedo = baseAndOverlay.rgb;
+            #endif
+
+            o.Alpha = 1;
             o.Smoothness = _Smoothness;
 
             #ifdef _NORMALMAP
