@@ -9,7 +9,7 @@ Shader "Custom/TilingBreak" {
         _BlendRange ("Blend Range", Range(0, 1)) = 0.1
         _MinScale ("Minimum Scale", Range(0, 5.0)) = 0.5
         _MaxScale ("Maximum Scale", Range(0, 5.0)) = 2.0
-        _OverlayScale ("Overlay Scale", Range(1,15)) = 1.0
+        _OverlayScale ("Overlay Scale", Range(1,15)) = 5.0
         _OverlayOpacity ("Overlay Opacity", Range(0,1)) = 0.5
         _BlendRange2 ("Overlay Blend Range", Range(0, 1)) = 0.1
         [Toggle(DEBUG_MODE)] _DebugMode ("Debug Mode", Float) = 0
