@@ -10,6 +10,8 @@ This repository is a collection of utilities I've developed for Blender and Unit
 
 - `Apply Modifiers`: One-click button to apply all modifiers in your scene. Useful for finalizing models or making bulk changes.
 
+- `Bulk Smart UV`: Select an object and it applies Smart UV Project individually to it and its children.
+
 ### Unity Shader
 - `TileBreaker`: A Unity shader that helps you break up repetitive tiling textures, giving your materials a more organic look.
 

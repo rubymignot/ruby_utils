@@ -1,5 +1,7 @@
 bl_info = {
     "name": "Sync Render Visibility",
+    "author": "Ruby Mignot",
+    "version": (1, 1, 0),
     "blender": (4, 1, 0),
     "category": "Object",
 }
